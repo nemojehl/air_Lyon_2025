@@ -165,9 +165,8 @@ function typeShort(t){
 const map=L.map('map',{zoomControl:false,attributionControl:false}).setView([45.72,4.89],11);
 L.control.zoom({position:'topright'}).addTo(map);
 L.control.attribution({position:'bottomright',prefix:''}).addTo(map);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
-  attribution: '© OpenStreetMap © CARTO',
-  subdomains: 'abcd',
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap',
   maxZoom: 19
 }).addTo(map);
 
