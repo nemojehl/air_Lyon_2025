@@ -1,6 +1,1 @@
-{
-    "code": 401,
-    "errors": "INSUFFICIENT_ROLE",
-    "message": "Vous n'êtes pas authorisé à accéder à cette ressource.",
-    "success": false
-}
+{"code_insee": "", "commune": "", "date": "", "qualificatif": "", "indice": ""}
