@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Récupérer l'indice ATMO
         run: |
@@ -23,7 +25,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git pull --rebase
           git add atmo.json
           git diff --cached --quiet || git commit -m "Update indice ATMO"
-          git push
+          git push --force
