@@ -187,34 +187,18 @@ async function loadAtmo() {
   const dateEl = document.getElementById('atmo-date');
   try {
     const r = await fetch('atmo.json');
-    const data = await r.json();
+    const d = await r.json();
+    if (!d.qualificatif) throw new Error();
 
-    // Format A : ancien endpoint (data[0].index)
-    // Format B : nouvel endpoint (indice_multipolluant)
-    let valeur, qual, couleur;
-
-    if (data?.indice_multipolluant) {
-      valeur  = data.indice_multipolluant.valeur;
-      qual    = data.indice_multipolluant.qualificatif;
-      couleur = data.indice_multipolluant.couleur_html || '#e8ff3c';
-    } else if (data?.indices?.indice_j?.indice_multipolluant) {
-      valeur  = data.indices.indice_j.indice_multipolluant.valeur;
-      qual    = data.indices.indice_j.indice_multipolluant.qualificatif;
-      couleur = data.indices.indice_j.indice_multipolluant.couleur_html || '#e8ff3c';
-    } else if (data?.data?.[0]) {
-      const COLORS={1:'#3cffb8',2:'#e8ff3c',3:'#f5c842',4:'#ff8c3c',5:'#ff4545',6:'#c87cff'};
-      const LABELS={1:'Bon',2:'Moyen',3:'Dégradé',4:'Mauvais',5:'Très mauvais',6:'Extrêm. mauvais'};
-      valeur  = data.data[0].index;
-      qual    = LABELS[valeur] || '—';
-      couleur = COLORS[valeur] || '#888';
-    } else throw new Error();
-
-    badge.textContent         = valeur;
-    badge.style.borderColor   = couleur;
-    badge.style.color         = couleur;
-    qualif.textContent        = qual;
-    qualif.style.color        = couleur;
-    dateEl.textContent        = new Date().toLocaleDateString('fr-FR', {day:'numeric',month:'long',year:'numeric'});
+    const col = d.couleur || '#e8ff3c';
+    badge.textContent        = d.indice;
+    badge.style.borderColor  = col;
+    badge.style.color        = col;
+    qualif.textContent       = d.qualificatif;
+    qualif.style.color       = col;
+    dateEl.textContent       = d.date
+      ? new Date(d.date).toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'})
+      : '';
   } catch {
     badge.textContent  = '?';
     qualif.textContent = 'Indisponible';
