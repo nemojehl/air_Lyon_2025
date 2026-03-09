@@ -24,28 +24,18 @@ jobs:
               content = r.read().decode('utf-8')
 
           reader = csv.DictReader(io.StringIO(content))
-          result = {}
-          for row in reader:
-              print("COLONNES:", list(row.keys())[:6])  # debug
-              print("EXEMPLE:", list(row.values())[:6])  # debug
-              # cherche Lyon (69123) dans toutes les colonnes
-              for k, v in row.items():
-                  if '69123' in str(v):
-                      result = dict(row)
-                      break
-              if result:
-                  break
-
-          with open('atmo.json', 'w') as f:
-              json.dump(result, f, ensure_ascii=False, indent=2)
-          print("RÉSULTAT:", json.dumps(result, ensure_ascii=False))
+          first_row = next(reader)
+          
+          # Afficher TOUTES les colonnes
+          print("TOUTES LES COLONNES:", list(first_row.keys()))
+          print("PREMIÈRE LIGNE COMPLÈTE:", first_row)
           EOF
 
       - name: Commit et push
         run: |
+          echo "{}" > atmo.json
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add atmo.json
-          git diff --cached --quiet || git commit -m "Update indice ATMO"
+          git diff --cached --quiet || git commit -m "debug"
           git push
-        
