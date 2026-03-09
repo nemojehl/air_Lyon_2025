@@ -13,28 +13,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Récupérer et filtrer l'indice ATMO Lyon
         run: |
-          curl -sL "https://www.data.gouv.fr/api/1/datasets/r/d2b9e8e6-8b0b-4bb6-9851-b4fa2efc8201" \
-            | grep "69123" \
-            | tail -1 \
-            | python3 -c "
-          import sys, csv, json
-          line = sys.stdin.read().strip()
-          reader = csv.reader([line])
-          row = next(reader)
-          result = {
-            'code_insee': row[0] if len(row)>0 else '',
-            'commune': row[1] if len(row)>1 else '',
-            'date': row[2] if len(row)>2 else '',
-            'qualificatif': row[3] if len(row)>3 else '',
-            'indice': row[4] if len(row)>4 else ''
-          }
-          print(json.dumps(result))
-          " > atmo.json
+          python3 - <<'EOF'
+          import urllib.request, csv, json, io
+
+          url = "https://www.data.gouv.fr/api/1/datasets/r/d2b9e8e6-8b0b-4bb6-9851-b4fa2efc8201"
+          with urllib.request.urlopen(url) as r:
+              content = r.read().decode('utf-8')
+
+          reader = csv.DictReader(io.StringIO(content))
+          result = {}
+          for row in reader:
+              print("COLONNES:", list(row.keys())[:6])  # debug
+              print("EXEMPLE:", list(row.values())[:6])  # debug
+              # cherche Lyon (69123) dans toutes les colonnes
+              for k, v in row.items():
+                  if '69123' in str(v):
+                      result = dict(row)
+                      break
+              if result:
+                  break
+
+          with open('atmo.json', 'w') as f:
+              json.dump(result, f, ensure_ascii=False, indent=2)
+          print("RÉSULTAT:", json.dumps(result, ensure_ascii=False))
+          EOF
 
       - name: Commit et push
         run: |
@@ -42,5 +47,5 @@ jobs:
           git config user.email "actions@github.com"
           git add atmo.json
           git diff --cached --quiet || git commit -m "Update indice ATMO"
-          git pull --rebase
           git push
+        
