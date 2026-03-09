@@ -189,14 +189,13 @@ async function loadAtmo() {
     const r = await fetch('atmo.json');
     const d = await r.json();
     if (!d.qualificatif) throw new Error();
-
     const col = d.couleur || '#e8ff3c';
-    badge.textContent        = d.indice;
-    badge.style.borderColor  = col;
-    badge.style.color        = col;
-    qualif.textContent       = d.qualificatif;
-    qualif.style.color       = col;
-    dateEl.textContent       = d.date
+    badge.textContent       = d.indice;
+    badge.style.borderColor = col;
+    badge.style.color       = col;
+    qualif.textContent      = d.qualificatif;
+    qualif.style.color      = col;
+    dateEl.textContent      = d.date
       ? new Date(d.date).toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'})
       : '';
   } catch {
