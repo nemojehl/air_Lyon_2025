@@ -1,4 +1,6 @@
 {
-    "error": "not_found",
-    "error_description": "Cette URI n'existe pas"
+    "code": 401,
+    "errors": "INSUFFICIENT_ROLE",
+    "message": "Vous n'êtes pas authorisé à accéder à cette ressource.",
+    "success": false
 }
