@@ -18,7 +18,7 @@ jobs:
 
       - name: Récupérer l'indice ATMO
         run: |
-          curl -s "https://api.atmo-aura.fr/air/json?insee=69123&api_token=428a454fc005ebdf61636b02788619f7" \
+          curl -s "https://api.atmo-aura.fr/partenaires/indice_request?api_token=428a454fc005ebdf61636b02788619f7&longitude=4.8357&latitude=45.7640" \
             -o atmo.json
 
       - name: Commit et push
