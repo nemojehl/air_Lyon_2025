@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dataviz — Air·Lyon 2025</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #040d18; --surface: #0a1929; --surface2: #0f2236;
+    --border: #132a45; --text: #c8dff0; --text-dim: #4a7090; --white: #e8f6ff;
+    --no2: #f59e0b; --pm10: #ef4444; --pm25: #f97316; --o3: #22d3ee; --so2: #a855f7;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'IBM Plex Mono',monospace; }
+
+  nav {
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    background:rgba(4,13,24,0.95); backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 2.5rem; height:60px;
+  }
+  .nav-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.2rem; color:var(--white); letter-spacing:-0.02em; }
+  .nav-logo span { color:var(--no2); }
+  .nav-links { display:flex; gap:0.25rem; }
+  .nav-links a {
+    font-family:'IBM Plex Mono',monospace; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em;
+    color:var(--text-dim); text-decoration:none; padding:0.4rem 0.9rem;
+    border:1px solid transparent; border-radius:3px; transition:all .2s;
+  }
+  .nav-links a:hover, .nav-links a.active { color:var(--white); border-color:var(--border); background:var(--surface); }
+
+  .page-header { padding: 6rem 2.5rem 2rem; border-bottom:1px solid var(--border); }
+  .page-header h1 { font-family:'Syne',sans-serif; font-weight:800; font-size:2.8rem; color:var(--white); letter-spacing:-0.03em; margin-bottom:0.5rem; }
+  .page-header p { font-size:0.75rem; color:var(--text-dim); line-height:1.6; max-width:560px; }
+
+  /* POLLUANT SELECTOR */
+  .polluant-bar {
+    padding:1.5rem 2.5rem; display:flex; align-items:center; gap:0.5rem;
+    flex-wrap:wrap; border-bottom:1px solid var(--border);
+    position:sticky; top:60px; background:var(--bg); z-index:50;
+  }
+  .pol-label { font-size:0.6rem; text-transform:uppercase; letter-spacing:0.15em; color:var(--text-dim); margin-right:0.5rem; }
+  .pol-btn {
+    font-family:'IBM Plex Mono',monospace; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.1em;
+    padding:0.45rem 1.1rem; border:1px solid var(--border); border-radius:2px;
+    background:transparent; color:var(--text-dim); cursor:pointer; transition:all .2s;
+  }
+  .pol-btn:hover { color:var(--white); border-color:var(--text-dim); }
+  .pol-btn.active { color:#000; border-color:transparent; font-weight:500; }
+
+  main { padding:2.5rem; display:flex; flex-direction:column; gap:3rem; }
+
+  /* CHART BLOCKS */
+  .chart-block {
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    padding:2rem; position:relative;
+  }
+  .chart-title { font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem; color:var(--white); margin-bottom:0.35rem; }
+  .chart-subtitle { font-size:0.65rem; color:var(--text-dim); margin-bottom:1.5rem; line-height:1.5; }
+  .chart-wrap { position:relative; height:380px; }
+  .chart-wrap-bar { position:relative; height:320px; }
+
+  /* THRESHOLD NOTE */
+  .threshold-note {
+    margin-top:1rem; padding:0.75rem 1rem;
+    background:var(--surface2); border-left:3px solid; border-radius:0 4px 4px 0;
+    font-size:0.65rem; color:var(--text-dim); line-height:1.6;
+  }
+  .threshold-note strong { color:var(--white); }
+
+  /* LEGEND */
+  .chart-legend { display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:1.25rem; }
+  .legend-item { display:flex; align-items:center; gap:0.4rem; font-size:0.62rem; color:var(--text-dim); }
+  .legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+  /* NO DATA */
+  .no-data {
+    display:flex; align-items:center; justify-content:center;
+    height:200px; color:var(--text-dim); font-size:0.75rem;
+    border:1px dashed var(--border); border-radius:4px;
+  }
+
+  footer {
+    background:var(--surface); border-top:1px solid var(--border);
+    padding:2rem 2.5rem; font-size:0.65rem; color:var(--text-dim);
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;
+  }
+  footer a { color:var(--text-dim); text-decoration:none; }
+  footer a:hover { color:var(--white); }
+
+  @media(max-width:768px) {
+    .page-header, main { padding:5rem 1rem 1rem; }
+    .polluant-bar { padding:1rem; }
+    .chart-wrap { height:260px; }
+    .chart-wrap-bar { height:220px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Air<span>·</span>Lyon</div>
+  <div class="nav-links">
+    <a href="index.html">Accueil</a>
+    <a href="dataviz.html" class="active">Dataviz</a>
+    <a href="infographie.html">Infographie</a>
+    <a href="carte.html">Carte</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <h1>Visualisation des données</h1>
+  <p>Sélectionnez un polluant pour explorer les concentrations mensuelles et annuelles par station. Seules les stations mesurant le polluant sélectionné apparaissent.</p>
+</div>
+
+<div class="polluant-bar">
+  <span class="pol-label">Polluant :</span>
+  <button class="pol-btn active" data-pol="NO2" style="--c:var(--no2)">NO₂</button>
+  <button class="pol-btn" data-pol="PM10" style="--c:var(--pm10)">PM10</button>
+  <button class="pol-btn" data-pol="PM25" style="--c:var(--pm25)">PM2.5</button>
+  <button class="pol-btn" data-pol="O3" style="--c:var(--o3)">O₃</button>
+  <button class="pol-btn" data-pol="SO2" style="--c:var(--so2)">SO₂</button>
+</div>
+
+<main>
+  <div class="chart-block">
+    <div class="chart-title" id="line-title">Évolution mensuelle — NO₂ (µg/m³)</div>
+    <div class="chart-subtitle">Concentration moyenne journalière par mois — 10 stations permanentes — 2025</div>
+    <div class="chart-wrap">
+      <canvas id="lineChart"></canvas>
+    </div>
+    <div class="threshold-note" id="threshold-note" style="border-color:var(--no2)"></div>
+    <div class="chart-legend" id="line-legend"></div>
+  </div>
+
+  <div class="chart-block">
+    <div class="chart-title" id="bar-title">Moyenne annuelle 2025 — NO₂ par station (µg/m³)</div>
+    <div class="chart-subtitle">Classement des stations de la plus polluée à la moins polluée</div>
+    <div class="chart-wrap-bar">
+      <canvas id="barChart"></canvas>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div>Données : <a href="https://www.atmo-auvergnerhonealpes.fr" target="_blank">Atmo Auvergne-Rhône-Alpes</a> — Licence ODbL — 2025</div>
+  <div>Mesures journalières moyennées par mois</div>
+</footer>
+
+<script>
+// ── DATA ────────────────────────────────────────────────────────────────────
+const DATA_MENSUEL = {"NO2":{"A7 Sud Lyonnais":[35.9,30.9,29.0,31.9,26.9,33.2,27.0,28.7,25.6,25.2,28.1,35.7],"Est Lyonnais Vaulx-en-Velin":[null,19.4,15.0,12.3,9.9,10.1,7.8,8.5,10.5,13.9,18.5,25.6],"Est lyonnais St-Exupéry":[10.3,11.0,8.5,6.0,5.1,5.9,5.5,6.4,6.0,7.1,11.1,14.3],"Lyon Centre":[21.2,20.0,15.0,15.2,11.7,13.7,10.8,10.9,13.3,15.8,21.1,26.7],"Lyon Gerland":[19.1,18.2,14.0,16.8,12.9,14.7,11.6,14.4,12.4,12.9,15.2,18.2],"Lyon Périphérique":[38.1,46.9,41.3,40.2,39.4,41.6,40.0,41.9,37.4,35.4,40.6,43.6],"Lyon Trafic Jaurès":[29.8,30.5,26.8,23.8,19.4,21.8,18.6,22.8,25.7,27.2,29.7,34.9],"Saint Fons Sud":[21.0,18.7,16.1,13.7,10.0,11.4,10.0,13.0,11.9,13.3,16.4,19.9],"Sud Lyonnais Feyzin ZI":[20.4,18.4,16.1,14.7,12.7,13.3,14.3,14.6,12.6,14.8,17.0,19.7],"Sud Lyonnais Ternay":[15.5,15.7,12.5,10.9,8.9,10.2,9.7,12.0,11.3,13.3,14.3,15.4]},"PM10":{"A7 Sud Lyonnais":[27.3,30.1,23.8,21.6,21.7,24.5,18.3,18.4,14.5,18.7,20.1,27.9],"Est lyonnais St-Exupéry":[15.1,20.9,15.6,10.9,10.3,18.3,12.5,17.0,8.6,12.3,11.8,16.2],"Lyon Centre":[19.5,20.8,16.8,13.4,13.5,23.6,14.3,17.1,11.4,16.8,15.1,22.7],"Lyon Gerland":[20.6,23.3,17.7,13.5,11.6,18.7,11.0,15.1,9.1,13.1,15.0,22.5],"Lyon Périphérique":[23.0,25.5,21.6,21.2,18.4,23.5,16.5,19.2,18.0,22.1,21.2,27.5],"Lyon Trafic Jaurès":[16.2,17.2,13.7,11.8,10.3,14.3,10.2,16.1,13.2,17.5,17.0,23.7],"Saint Fons Sud":[20.2,16.8,13.0,10.5,10.6,17.0,14.6,14.8,8.3,11.3,11.9,14.6],"Sud Lyonnais Feyzin ZI":[20.5,22.2,18.4,21.5,18.4,25.7,15.2,18.0,11.5,14.9,15.1,17.1]},"PM25":{"A7 Sud Lyonnais":[15.4,18.5,10.2,5.7,7.3,12.0,7.7,9.1,5.1,8.0,12.5,17.0],"Est Lyonnais Vaulx-en-Velin":[null,14.7,9.9,5.8,6.2,10.7,5.6,7.6,4.5,6.5,6.9,12.0],"Est lyonnais St-Exupéry":[13.3,18.5,12.0,5.6,5.5,9.5,5.7,8.2,4.3,8.6,8.8,13.8],"Lyon Centre":[16.0,17.1,11.4,6.7,6.7,14.8,6.5,8.7,5.7,10.7,10.1,16.6],"Lyon Gerland":[16.2,17.3,11.2,6.3,6.0,11.8,5.3,7.6,4.5,8.6,9.9,16.9]},"O3":{"Est Lyonnais Vaulx-en-Velin":[null,33.4,41.5,55.6,null,80.0,63.8,64.8,33.2,26.6,28.1,18.4],"Est lyonnais St-Exupéry":[43.0,45.9,57.8,66.5,67.2,73.5,65.3,68.4,42.2,32.8,37.1,22.5],"Lyon Centre":[36.2,38.8,53.4,64.7,69.9,74.4,71.3,72.4,45.0,35.3,34.4,16.2],"Sud Lyonnais Ternay":[46.0,46.4,58.6,67.4,75.5,83.8,77.1,72.3,42.8,32.9,39.1,23.6]},"SO2":{"Saint Fons Sud":[4.9,3.7,4.0,4.3,2.9,1.8,1.6,1.9,2.8,1.9,2.4,2.1],"Sud Lyonnais Feyzin ZI":[7.1,6.9,5.3,4.3,6.0,5.2,9.0,7.8,3.6,4.2,6.2,3.3]}};
+const DATA_ANNUEL = {"NO2":{"A7 Sud Lyonnais":29.8,"Est Lyonnais Vaulx-en-Velin":13.7,"Est lyonnais St-Exupéry":8.1,"Lyon Centre":16.3,"Lyon Gerland":15.0,"Lyon Périphérique":40.5,"Lyon Trafic Jaurès":25.9,"Saint Fons Sud":14.6,"Sud Lyonnais Feyzin ZI":15.7,"Sud Lyonnais Ternay":12.4},"PM10":{"A7 Sud Lyonnais":22.1,"Est lyonnais St-Exupéry":14.0,"Lyon Centre":17.0,"Lyon Gerland":15.9,"Lyon Périphérique":21.5,"Lyon Trafic Jaurès":15.1,"Saint Fons Sud":13.5,"Sud Lyonnais Feyzin ZI":18.2},"PM25":{"A7 Sud Lyonnais":10.8,"Est Lyonnais Vaulx-en-Velin":8.1,"Est lyonnais St-Exupéry":9.4,"Lyon Centre":10.8,"Lyon Gerland":10.1},"O3":{"Est Lyonnais Vaulx-en-Velin":41.0,"Est lyonnais St-Exupéry":51.6,"Lyon Centre":51.2,"Sud Lyonnais Ternay":55.6},"SO2":{"Saint Fons Sud":2.9,"Sud Lyonnais Feyzin ZI":5.7}};
+
+const MOIS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+
+const POL_COLORS = {
+  NO2: '#f59e0b', PM10: '#ef4444', PM25: '#f97316', O3: '#22d3ee', SO2: '#a855f7'
+};
+const POL_LABELS = {
+  NO2: 'NO₂ — Dioxyde d\'azote', PM10: 'PM10 — Particules ≤10µm',
+  PM25: 'PM2.5 — Particules fines', O3: 'O₃ — Ozone', SO2: 'SO₂ — Dioxyde de soufre'
+};
+const THRESHOLDS = {
+  NO2:  { eu:40,  oms:10,  unit:'µg/m³/an',  note:'Limite UE dépassée à Lyon Périphérique (40.5 µg/m³).' },
+  PM10: { eu:40,  oms:15,  unit:'µg/m³/an',  note:'Toutes les stations restent sous la limite UE (40 µg/m³). La recommandation OMS de 15 µg/m³ est dépassée sur plusieurs stations.' },
+  PM25: { eu:25,  oms:5,   unit:'µg/m³/an',  note:'Toutes les stations respectent la limite UE (25 µg/m³). La recommandation OMS de 5 µg/m³ est largement dépassée.' },
+  O3:   { eu:120, oms:60,  unit:'µg/m³ (8h)',note:'L\'ozone est plus élevé en périphérie (Ternay : 83.8 µg/m³ en juillet) qu\'en centre-ville — phénomène photochimique classique.' },
+  SO2:  { eu:125, oms:40,  unit:'µg/m³/24h', note:'SO₂ mesuré uniquement près de la Vallée de la Chimie. Valeurs très inférieures aux seuils réglementaires.' },
+};
+
+// Palette station (12 couleurs distinctes)
+const STATION_PALETTE = [
+  '#60a5fa','#34d399','#f87171','#fb923c','#f43f5e',
+  '#a78bfa','#38bdf8','#fbbf24','#e879f9','#4ade80','#818cf8','#94a3b8'
+];
+
+let lineChart, barChart;
+let currentPol = 'NO2';
+
+function getStationColor(station, stations) {
+  const idx = stations.indexOf(station);
+  return STATION_PALETTE[idx % STATION_PALETTE.length];
+}
+
+function updateCharts(pol) {
+  currentPol = pol;
+  const color = POL_COLORS[pol];
+  const thresh = THRESHOLDS[pol];
+  const mensuel = DATA_MENSUEL[pol] || {};
+  const annuel  = DATA_ANNUEL[pol]  || {};
+  const stations = Object.keys(mensuel);
+
+  // Boutons
+  document.querySelectorAll('.pol-btn').forEach(b => {
+    const active = b.dataset.pol === pol;
+    b.classList.toggle('active', active);
+    if (active) { b.style.background = color; b.style.color = '#000'; b.style.borderColor = color; }
+    else { b.style.background = ''; b.style.color = ''; b.style.borderColor = ''; }
+  });
+
+  // Titres
+  document.getElementById('line-title').textContent = `Évolution mensuelle — ${POL_LABELS[pol]} (µg/m³)`;
+  document.getElementById('bar-title').textContent  = `Moyenne annuelle 2025 — ${POL_LABELS[pol]} par station (µg/m³)`;
+
+  // Note seuils
+  const note = document.getElementById('threshold-note');
+  note.style.borderColor = color;
+  note.innerHTML = `<strong>Seuils :</strong> Limite UE = ${thresh.eu} ${thresh.unit} — Recommandation OMS 2021 = ${thresh.oms} ${thresh.unit}<br>${thresh.note}`;
+
+  // ── LINE CHART ─────────────────────────────────────────────────────────────
+  const lineDatasets = stations.map((s, i) => ({
+    label: s,
+    data: DATA_MENSUEL[pol][s],
+    borderColor: getStationColor(s, stations),
+    backgroundColor: getStationColor(s, stations) + '22',
+    borderWidth: 2,
+    pointRadius: 3,
+    pointHoverRadius: 6,
+    tension: 0.35,
+    spanGaps: true,
+  }));
+
+  // Ligne seuil UE
+  lineDatasets.push({
+    label: `Limite UE (${thresh.eu})`,
+    data: Array(12).fill(thresh.eu),
+    borderColor: color + '80',
+    borderWidth: 1.5,
+    borderDash: [6, 4],
+    pointRadius: 0,
+    fill: false,
+  });
+
+  const lineOptions = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#0a1929', borderColor: '#132a45', borderWidth: 1,
+        titleFont: { family: 'IBM Plex Mono', size: 11 },
+        bodyFont:  { family: 'IBM Plex Mono', size: 11 },
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y !== null ? ctx.parsed.y + ' µg/m³' : 'N/D'}`
+        }
+      }
+    },
+    scales: {
+      x: { grid: { color: '#132a45' }, ticks: { color: '#4a7090', font: { family: 'IBM Plex Mono', size: 10 } } },
+      y: {
+        grid: { color: '#132a45' },
+        ticks: { color: '#4a7090', font: { family: 'IBM Plex Mono', size: 10 }, callback: v => v + ' µg/m³' },
+        beginAtZero: true,
+      }
+    }
+  };
+
+  if (lineChart) lineChart.destroy();
+  lineChart = new Chart(document.getElementById('lineChart'), {
+    type: 'line',
+    data: { labels: MOIS, datasets: lineDatasets },
+    options: lineOptions,
+  });
+
+  // Légende custom
+  const legend = document.getElementById('line-legend');
+  legend.innerHTML = stations.map((s, i) =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${getStationColor(s,stations)}"></div>${s}</div>`
+  ).join('');
+
+  // ── BAR CHART ──────────────────────────────────────────────────────────────
+  const sorted = Object.entries(annuel).sort((a,b) => b[1]-a[1]);
+  const barLabels = sorted.map(([s]) => s);
+  const barValues = sorted.map(([,v]) => v);
+  const barColors = barLabels.map(s => getStationColor(s, stations));
+
+  const barOptions = {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#0a1929', borderColor: '#132a45', borderWidth: 1,
+        callbacks: { label: ctx => ` ${ctx.parsed.x} µg/m³` }
+      },
+      annotation: {
+        annotations: {
+          eu: {
+            type: 'line', scaleID: 'x', value: thresh.eu,
+            borderColor: color + '80', borderWidth: 1.5, borderDash: [5,5],
+            label: { content: `UE: ${thresh.eu}`, display: true, color: color, font: { size: 10, family: 'IBM Plex Mono' }, position: 'end', backgroundColor: 'transparent' }
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: '#132a45' },
+        ticks: { color: '#4a7090', font: { family: 'IBM Plex Mono', size: 10 }, callback: v => v + ' µg/m³' },
+        beginAtZero: true,
+      },
+      y: {
+        grid: { color: '#0f2236' },
+        ticks: { color: '#c8dff0', font: { family: 'IBM Plex Mono', size: 10 } }
+      }
+    }
+  };
+
+  if (barChart) barChart.destroy();
+  barChart = new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: barLabels,
+      datasets: [{
+        data: barValues,
+        backgroundColor: barColors.map(c => c + 'cc'),
+        borderColor: barColors,
+        borderWidth: 1,
+        borderRadius: 2,
+      }]
+    },
+    options: barOptions,
+  });
+}
+
+document.querySelectorAll('.pol-btn').forEach(btn => {
+  btn.addEventListener('click', () => updateCharts(btn.dataset.pol));
+});
+
+updateCharts('NO2');
+</script>
+</body>
+</html>
