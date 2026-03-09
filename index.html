@@ -189,8 +189,10 @@ async function loadAtmo() {
   const dateEl = document.getElementById('atmo-date');
   try {
     const r = await fetch('atmo.json');
+    console.log('Status:', r.status, r.url);
     const d = await r.json();
-    if (!d.qualificatif) throw new Error();
+    console.log('Data:', d);
+    if (!d.qualificatif) throw new Error('pas de qualificatif');
     const col = d.couleur || '#e8ff3c';
     badge.textContent       = d.indice;
     badge.style.borderColor = col;
@@ -200,7 +202,8 @@ async function loadAtmo() {
     dateEl.textContent      = d.date
       ? new Date(d.date).toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'})
       : '';
-  } catch {
+  } catch(e) {
+    console.error('Erreur ATMO:', e);
     badge.textContent  = '?';
     qualif.textContent = 'Indisponible';
     dateEl.textContent = '';
