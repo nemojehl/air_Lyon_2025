@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Récupérer et filtrer l'indice ATMO Lyon
+      - name: Récupérer l'indice ATMO Lyon
         run: |
           python3 - <<'EOF'
           import urllib.request, csv, json, io
@@ -24,18 +24,27 @@ jobs:
               content = r.read().decode('utf-8')
 
           reader = csv.DictReader(io.StringIO(content))
-          first_row = next(reader)
-          
-          # Afficher TOUTES les colonnes
-          print("TOUTES LES COLONNES:", list(first_row.keys()))
-          print("PREMIÈRE LIGNE COMPLÈTE:", first_row)
+          result = {}
+          for row in reader:
+              if row.get('lib_zone', '').strip().lower() == 'lyon':
+                  result = {
+                      'commune': row.get('lib_zone', ''),
+                      'date': row.get('date_ech', ''),
+                      'qualificatif': row.get('lib_qual', ''),
+                      'indice': row.get('code_qual', ''),
+                      'couleur': row.get('coul_qual', '')
+                  }
+                  break
+
+          print("RÉSULTAT:", json.dumps(result, ensure_ascii=False))
+          with open('atmo.json', 'w') as f:
+              json.dump(result, f, ensure_ascii=False, indent=2)
           EOF
 
       - name: Commit et push
         run: |
-          echo "{}" > atmo.json
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add atmo.json
-          git diff --cached --quiet || git commit -m "debug"
+          git diff --cached --quiet || git commit -m "Update indice ATMO"
           git push
