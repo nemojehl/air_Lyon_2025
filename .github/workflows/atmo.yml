@@ -16,25 +16,26 @@ jobs:
 
       - name: Récupérer l'indice ATMO Lyon
         run: |
+          curl -sL --retry 3 --retry-delay 5 \
+            "https://www.data.gouv.fr/api/1/datasets/r/d2b9e8e6-8b0b-4bb6-9851-b4fa2efc8201" \
+            -o indice_atmo.csv
+
           python3 - <<'EOF'
-          import urllib.request, csv, json, io
+          import csv, json
 
-          url = "https://www.data.gouv.fr/api/1/datasets/r/d2b9e8e6-8b0b-4bb6-9851-b4fa2efc8201"
-          with urllib.request.urlopen(url) as r:
-              content = r.read().decode('utf-8')
-
-          reader = csv.DictReader(io.StringIO(content))
           result = {}
-          for row in reader:
-              if row.get('lib_zone', '').strip().lower() == 'lyon':
-                  result = {
-                      'commune': row.get('lib_zone', ''),
-                      'date': row.get('date_ech', ''),
-                      'qualificatif': row.get('lib_qual', ''),
-                      'indice': row.get('code_qual', ''),
-                      'couleur': row.get('coul_qual', '')
-                  }
-                  break
+          with open('indice_atmo.csv', encoding='utf-8') as f:
+              reader = csv.DictReader(f)
+              for row in reader:
+                  if row.get('lib_zone', '').strip().lower() == 'lyon':
+                      result = {
+                          'commune': row.get('lib_zone', ''),
+                          'date': row.get('date_ech', ''),
+                          'qualificatif': row.get('lib_qual', ''),
+                          'indice': row.get('code_qual', ''),
+                          'couleur': row.get('coul_qual', '')
+                      }
+                      break
 
           print("RÉSULTAT:", json.dumps(result, ensure_ascii=False))
           with open('atmo.json', 'w') as f:
