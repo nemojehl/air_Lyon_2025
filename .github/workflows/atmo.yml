@@ -2,7 +2,7 @@ name: Fetch indice ATMO
 
 on:
   schedule:
-    - cron: '0 7 * * *'
+    - cron: '0 14 * * *'
   workflow_dispatch:
 
 permissions:
@@ -16,15 +16,31 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Récupérer l'indice ATMO
+      - name: Récupérer et filtrer l'indice ATMO Lyon
         run: |
-          curl -s "https://api.atmo-aura.fr/partenaires/indice_request?api_token=428a454fc005ebdf61636b02788619f7&longitude=4.8357&latitude=45.7640" \
-            -o atmo.json
+          curl -sL "https://www.data.gouv.fr/api/1/datasets/r/d2b9e8e6-8b0b-4bb6-9851-b4fa2efc8201" \
+            | grep "69123" \
+            | tail -1 \
+            | python3 -c "
+          import sys, csv, json
+          line = sys.stdin.read().strip()
+          reader = csv.reader([line])
+          row = next(reader)
+          result = {
+            'code_insee': row[0] if len(row)>0 else '',
+            'commune': row[1] if len(row)>1 else '',
+            'date': row[2] if len(row)>2 else '',
+            'qualificatif': row[3] if len(row)>3 else '',
+            'indice': row[4] if len(row)>4 else ''
+          }
+          print(json.dumps(result))
+          " > atmo.json
 
       - name: Commit et push
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
+          git pull --rebase
           git add atmo.json
           git diff --cached --quiet || git commit -m "Update indice ATMO"
           git push --force
