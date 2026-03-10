@@ -1,13 +1,10 @@
 name: Fetch indice ATMO
-
 on:
   schedule:
     - cron: '0 14 * * *'
   workflow_dispatch:
-
 permissions:
   contents: write
-
 jobs:
   fetch-atmo:
     runs-on: ubuntu-latest
@@ -16,30 +13,38 @@ jobs:
 
       - name: Récupérer l'indice ATMO Lyon
         run: |
-          curl -sL --retry 3 --retry-delay 5 \
-            "https://www.data.gouv.fr/api/1/datasets/r/d2b9e8e6-8b0b-4bb6-9851-b4fa2efc8201" \
-            -o indice_atmo.csv
+          # Récupère l'URL du CSV via l'API dataset (stable)
+          CSV_URL=$(curl -sL "https://www.data.gouv.fr/api/1/datasets/indice-de-la-qualite-de-lair-quotidien-par-commune-indice-atmo/" \
+            | python3 -c "
+          import sys, json
+          d = json.load(sys.stdin)
+          resources = d.get('resources', [])
+          csv = next((r for r in resources if r.get('format','').lower() == 'csv'), None)
+          print(csv['latest'] if csv else '')
+          ")
+          echo "CSV URL: $CSV_URL"
+          curl -sL --retry 3 --retry-delay 5 "$CSV_URL" -o indice_atmo.csv
 
           python3 - <<'EOF'
           import csv, json
-
           result = {}
           with open('indice_atmo.csv', encoding='utf-8') as f:
               reader = csv.DictReader(f)
-              for row in reader:
-                  if row.get('lib_zone', '').strip().lower() == 'lyon':
-                      result = {
-                          'commune': row.get('lib_zone', ''),
-                          'date': row.get('date_ech', ''),
-                          'qualificatif': row.get('lib_qual', ''),
-                          'indice': row.get('code_qual', ''),
-                          'couleur': row.get('coul_qual', '')
-                      }
-                      break
-
-          print("RÉSULTAT:", json.dumps(result, ensure_ascii=False))
+              rows = [r for r in reader if r.get('lib_zone','').strip().lower() == 'lyon']
+              if rows:
+                  # Prendre la ligne avec la date la plus récente
+                  rows.sort(key=lambda r: r.get('date_ech',''), reverse=True)
+                  row = rows[0]
+                  result = {
+                      'commune': row.get('lib_zone',''),
+                      'date': row.get('date_ech',''),
+                      'qualificatif': row.get('lib_qual',''),
+                      'indice': row.get('code_qual',''),
+                      'couleur': row.get('coul_qual','')
+                  }
           with open('atmo.json', 'w') as f:
               json.dump(result, f, ensure_ascii=False, indent=2)
+          print("Résultat:", result)
           EOF
 
       - name: Commit et push
@@ -47,5 +52,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add atmo.json
-          git diff --cached --quiet || git commit -m "Update indice ATMO"
+          git diff --cached --quiet || git commit -m "Update indice ATMO $(date +%Y-%m-%d)"
           git push
