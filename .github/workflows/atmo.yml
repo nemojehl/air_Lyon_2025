@@ -1,7 +1,7 @@
 name: Fetch indice ATMO
 on:
   schedule:
-    - cron: '0 14 * * *'
+    - cron: '10 6 * * *'
   workflow_dispatch:
 permissions:
   contents: write
@@ -62,4 +62,3 @@ jobs:
           git add atmo.json
           git diff --cached --quiet || git commit -m "Update indice ATMO $(date +%Y-%m-%d)"
           git push
-
