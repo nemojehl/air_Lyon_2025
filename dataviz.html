@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dataviz — Air·Lyon 2025</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+  :root{--bg:#000;--s1:#0e0e0e;--s2:#161616;--border:#222;--border2:#2e2e2e;--text:#e8e8e8;--dim:#666;--dim2:#444;--white:#f5f5f5;--lime:#e8ff3c;--red:#ff4545;--blue:#3cc8ff;--orange:#ff8c3c;--purple:#c87cff;--green:#3cffb8;}
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;}
+
+  nav{position:fixed;top:0;left:0;right:0;z-index:200;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 3rem;background:rgba(0,0,0,.94);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.05em;color:var(--white);}
+  .logo span{color:var(--lime);}
+  .nav-links{display:flex;gap:.25rem;}
+  .nav-links a{font-family:'DM Mono',monospace;font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--dim);text-decoration:none;padding:.45rem 1rem;border-radius:4px;border:1px solid transparent;transition:all .2s;}
+  .nav-links a:hover{color:var(--white);background:var(--s2);border-color:var(--border);}
+  .nav-links a.active{color:var(--lime);border-color:rgba(232,255,60,.4);background:rgba(232,255,60,.05);}
+
+  .page-header{padding:5rem 3rem 2rem;border-bottom:1px solid var(--border);}
+  .page-header h1{font-family:'Bebas Neue',sans-serif;font-size:3.5rem;color:var(--white);letter-spacing:.03em;margin-bottom:.5rem;}
+  .page-header p{font-size:.95rem;color:var(--dim);max-width:560px;line-height:1.7;}
+
+  .pol-bar{padding:1.25rem 3rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;border-bottom:1px solid var(--border);position:sticky;top:64px;background:var(--bg);z-index:100;}
+  .pol-bar-label{font-family:'DM Mono',monospace;font-size:.65rem;text-transform:uppercase;letter-spacing:.15em;color:var(--dim);margin-right:.25rem;}
+  .pol-btn{font-family:'DM Mono',monospace;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;padding:.4rem 1rem;border:1px solid var(--border2);border-radius:4px;background:transparent;color:var(--dim);cursor:pointer;transition:all .2s;}
+  .pol-btn:hover{color:var(--white);border-color:var(--dim);}
+  .pol-btn.active{font-weight:500;color:#000;}
+  .pol-bar-sep{width:1px;height:20px;background:var(--border);margin:0 .25rem;}
+  .view-btn{font-family:'DM Mono',monospace;font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;padding:.35rem .85rem;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--dim);cursor:pointer;transition:all .2s;}
+  .view-btn:hover{color:var(--white);border-color:var(--dim);}
+  .view-btn.active{background:var(--s2);color:var(--white);border-color:var(--border2);}
+  .year-btn{font-family:'DM Mono',monospace;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;padding:.4rem 1rem;border:1px solid var(--border2);border-radius:4px;background:transparent;color:var(--dim);cursor:pointer;transition:all .2s;}
+  .year-btn:hover{color:var(--white);border-color:var(--dim);}
+  .year-btn.active{background:var(--s2);color:var(--white);border-color:var(--border2);}
+  .yr-cmp.active{background:rgba(232,255,60,.12);color:var(--lime);border-color:rgba(232,255,60,.4);}
+  .cmp-legend{display:flex;gap:1.5rem;margin-top:1rem;}
+  .delta-badge{display:inline-block;font-family:'DM Mono',monospace;font-size:.65rem;padding:.15rem .5rem;border-radius:3px;margin-left:.4rem;}
+  .type-legend{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.25rem;}
+  .type-legend-item{display:flex;align-items:center;gap:.4rem;font-size:.72rem;color:var(--dim);}
+  .type-legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+
+  main{padding:3rem;display:flex;flex-direction:column;gap:2.5rem;}
+
+  .chart-block{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:2rem;}
+  .chart-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--white);letter-spacing:.03em;margin-bottom:.35rem;}
+  .chart-sub{font-size:.82rem;color:var(--dim);margin-bottom:1.75rem;line-height:1.5;}
+  .chart-wrap{position:relative;height:380px;}
+  .chart-wrap-bar{position:relative;height:340px;}
+
+  .thresh-note{margin-top:1.25rem;padding:.85rem 1.1rem;background:var(--s2);border-left:3px solid;border-radius:0 4px 4px 0;font-size:.8rem;color:var(--dim);line-height:1.65;}
+  .thresh-note strong{color:var(--white);}
+
+  .chart-legend{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1.25rem;}
+  .legend-item{display:flex;align-items:center;gap:.4rem;font-size:.72rem;color:var(--dim);}
+  .legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+  .vaulx-note{margin-top:.75rem;padding:.7rem 1rem;background:rgba(255,140,60,.07);border-left:3px solid var(--orange);border-radius:0 4px 4px 0;font-size:.78rem;color:var(--dim);line-height:1.6;}
+
+  footer{border-top:1px solid var(--border);padding:2rem 3rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;font-size:.78rem;color:var(--dim);}
+  footer a{color:var(--dim);text-decoration:none;}footer a:hover{color:var(--white);}
+
+  @media(max-width:768px){.page-header,.pol-bar,main{padding-left:1.5rem;padding-right:1.5rem;}.chart-wrap{height:260px;}.chart-wrap-bar{height:240px;}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Air<span>·</span>Lyon</div>
+  <div class="nav-links">
+    <a href="index.html">Accueil</a>
+    <a href="dataviz.html" class="active">Dataviz</a>
+    <a href="infographie.html">Infographie</a>
+    <a href="carte.html">Carte</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <h1>VISUALISATION DES DONNÉES</h1>
+  <p>Sélectionnez un polluant et une année pour explorer les concentrations. Le mode <strong style="color:var(--lime)">Comparer</strong> superpose 2024 et 2025 pour mesurer l'évolution. Données 2024–2025 · Atmo AuRA.</p>
+</div>
+
+<div class="pol-bar">
+  <span class="pol-bar-label">Polluant :</span>
+  <button class="pol-btn active" data-pol="NO2">NO₂</button>
+  <button class="pol-btn" data-pol="PM10">PM10</button>
+  <button class="pol-btn" data-pol="PM25">PM2.5</button>
+  <button class="pol-btn" data-pol="O3">O₃</button>
+  <button class="pol-btn" data-pol="SO2">SO₂</button>
+  <div class="pol-bar-sep"></div>
+  <span class="pol-bar-label">Année :</span>
+  <button class="year-btn active" id="yr-2025">2025</button>
+  <button class="year-btn" id="yr-2024">2024</button>
+  <button class="year-btn yr-cmp" id="yr-cmp">Comparer ↔</button>
+  <div class="pol-bar-sep"></div>
+  <span class="pol-bar-label">Vue :</span>
+  <button class="view-btn active" id="view-all">Toutes les stations</button>
+  <button class="view-btn" id="view-type">Par type de site</button>
+</div>
+
+<main>
+  <div class="chart-block">
+    <div class="chart-title" id="line-title">ÉVOLUTION MENSUELLE — NO₂ (µg/m³)</div>
+    <div class="chart-sub" id="line-sub">Concentration moyenne journalière par mois · 2025 · Stations permanentes lyonnaises</div>
+    <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
+    <div class="thresh-note" id="thresh-note"></div>
+    <div class="vaulx-note" id="vaulx-note" style="display:none">⚠ Est Lyonnais Vaulx-en-Velin — données 2024 indisponibles (station hors service quasi toute l'année). La comparaison 2024–2025 est exclue pour cette station.</div>
+    <div class="chart-legend" id="line-legend"></div>
+    <div class="type-legend" id="type-legend" style="display:none">
+      <div class="type-legend-item"><div class="type-legend-dot" style="background:#ff4545"></div>Trafic / Autoroutier</div>
+      <div class="type-legend-item"><div class="type-legend-dot" style="background:#3cc8ff"></div>Fond urbain</div>
+      <div class="type-legend-item"><div class="type-legend-dot" style="background:#3cffb8"></div>Périurbain</div>
+      <div class="type-legend-item"><div class="type-legend-dot" style="background:#c87cff"></div>Industriel</div>
+    </div>
+  </div>
+
+  <div class="chart-block" id="bar-block">
+    <div class="chart-title" id="bar-title">CLASSEMENT ANNUEL 2025 — NO₂ PAR STATION</div>
+    <div class="chart-sub" id="bar-sub">Moyenne annuelle de la plus concentrée à la moins concentrée</div>
+    <div class="chart-wrap-bar"><canvas id="barChart"></canvas></div>
+    <div class="cmp-legend" id="cmp-legend" style="display:none">
+      <div class="legend-item"><div class="legend-dot" style="background:#e8ff3c;opacity:.5;border-radius:2px;width:14px;height:8px"></div>2024</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#e8ff3c;border-radius:2px;width:14px;height:8px"></div>2025</div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div>Données : <a href="https://www.atmo-auvergnerhonealpes.fr" target="_blank">Atmo Auvergne-Rhône-Alpes</a> — Licence ODbL — 2025</div>
+  <div>Mesures journalières moyennées par mois</div>
+</footer>
+
+
+<script>
+// ── DONNÉES 2025 ──
+const D_M={"NO2":{"A7 Sud Lyonnais":[35.9,30.9,29.0,31.9,26.9,33.2,27.0,28.7,25.6,25.2,28.1,35.7],"Est Lyonnais Vaulx-en-Velin":[null,19.4,15.0,12.3,9.9,10.1,7.8,8.5,10.5,13.9,18.5,25.6],"Est lyonnais St-Exupéry":[10.3,11.0,8.5,6.0,5.1,5.9,5.5,6.4,6.0,7.1,11.1,14.3],"Lyon Centre":[21.2,20.0,15.0,15.2,11.7,13.7,10.8,10.9,13.3,15.8,21.1,26.7],"Lyon Gerland":[19.1,18.2,14.0,16.8,12.9,14.7,11.6,14.4,12.4,12.9,15.2,18.2],"Lyon Périphérique":[38.1,46.9,41.3,40.2,39.4,41.6,40.0,41.9,37.4,35.4,40.6,43.6],"Lyon Trafic Jaurès":[29.8,30.5,26.8,23.8,19.4,21.8,18.6,22.8,25.7,27.2,29.7,34.9],"Saint Fons Sud":[21.0,18.7,16.1,13.7,10.0,11.4,10.0,13.0,11.9,13.3,16.4,19.9],"Sud Lyonnais Feyzin ZI":[20.4,18.4,16.1,14.7,12.7,13.3,14.3,14.6,12.6,14.8,17.0,19.7],"Sud Lyonnais Ternay":[15.5,15.7,12.5,10.9,8.9,10.2,9.7,12.0,11.3,13.3,14.3,15.4]},"PM10":{"A7 Sud Lyonnais":[27.3,30.1,23.8,21.6,21.7,24.5,18.3,18.4,14.5,18.7,20.1,27.9],"Est lyonnais St-Exupéry":[15.1,20.9,15.6,10.9,10.3,18.3,12.5,17.0,8.6,12.3,11.8,16.2],"Lyon Centre":[19.5,20.8,16.8,13.4,13.5,23.6,14.3,17.1,11.4,16.8,15.1,22.7],"Lyon Gerland":[20.6,23.3,17.7,13.5,11.6,18.7,11.0,15.1,9.1,13.1,15.0,22.5],"Lyon Périphérique":[23.0,25.5,21.6,21.2,18.4,23.5,16.5,19.2,18.0,22.1,21.2,27.5],"Lyon Trafic Jaurès":[16.2,17.2,13.7,11.8,10.3,14.3,10.2,16.1,13.2,17.5,17.0,23.7],"Saint Fons Sud":[20.2,16.8,13.0,10.5,10.6,17.0,14.6,14.8,8.3,11.3,11.9,14.6],"Sud Lyonnais Feyzin ZI":[20.5,22.2,18.4,21.5,18.4,25.7,15.2,18.0,11.5,14.9,15.1,17.1]},"PM25":{"A7 Sud Lyonnais":[15.4,18.5,10.2,5.7,7.3,12.0,7.7,9.1,5.1,8.0,12.5,17.0],"Est Lyonnais Vaulx-en-Velin":[null,14.7,9.9,5.8,6.2,10.7,5.6,7.6,4.5,6.5,6.9,12.0],"Est lyonnais St-Exupéry":[13.3,18.5,12.0,5.6,5.5,9.5,5.7,8.2,4.3,8.6,8.8,13.8],"Lyon Centre":[16.0,17.1,11.4,6.7,6.7,14.8,6.5,8.7,5.7,10.7,10.1,16.6],"Lyon Gerland":[16.2,17.3,11.2,6.3,6.0,11.8,5.3,7.6,4.5,8.6,9.9,16.9]},"O3":{"Est Lyonnais Vaulx-en-Velin":[null,33.4,41.5,55.6,null,80.0,63.8,64.8,33.2,26.6,28.1,18.4],"Est lyonnais St-Exupéry":[43.0,45.9,57.8,66.5,67.2,73.5,65.3,68.4,42.2,32.8,37.1,22.5],"Lyon Centre":[36.2,38.8,53.4,64.7,69.9,74.4,71.3,72.4,45.0,35.3,34.4,16.2],"Sud Lyonnais Ternay":[46.0,46.4,58.6,67.4,75.5,83.8,77.1,72.3,42.8,32.9,39.1,23.6]},"SO2":{"Saint Fons Sud":[4.9,3.7,4.0,4.3,2.9,1.8,1.6,1.9,2.8,1.9,2.4,2.1],"Sud Lyonnais Feyzin ZI":[7.1,6.9,5.3,4.3,6.0,5.2,9.0,7.8,3.6,4.2,6.2,3.3]}};
+const D_A={"NO2":{"A7 Sud Lyonnais":29.8,"Est Lyonnais Vaulx-en-Velin":13.7,"Est lyonnais St-Exupéry":8.1,"Lyon Centre":16.3,"Lyon Gerland":15.0,"Lyon Périphérique":40.5,"Lyon Trafic Jaurès":25.9,"Saint Fons Sud":14.6,"Sud Lyonnais Feyzin ZI":15.7,"Sud Lyonnais Ternay":12.4},"PM10":{"A7 Sud Lyonnais":22.1,"Est lyonnais St-Exupéry":14.0,"Lyon Centre":17.0,"Lyon Gerland":15.9,"Lyon Périphérique":21.5,"Lyon Trafic Jaurès":15.1,"Saint Fons Sud":13.5,"Sud Lyonnais Feyzin ZI":18.2},"PM25":{"A7 Sud Lyonnais":10.8,"Est Lyonnais Vaulx-en-Velin":8.1,"Est lyonnais St-Exupéry":9.4,"Lyon Centre":10.8,"Lyon Gerland":10.1},"O3":{"Est Lyonnais Vaulx-en-Velin":41.0,"Est lyonnais St-Exupéry":51.6,"Lyon Centre":51.2,"Sud Lyonnais Ternay":55.6},"SO2":{"Saint Fons Sud":2.9,"Sud Lyonnais Feyzin ZI":5.7}};
+
+// ── DONNÉES 2024 ──
+const D_M24={"NO2":{"A7 Sud Lyonnais":[38.3,33.8,32.5,29.1,29.7,29.0,30.2,27.7,25.1,25.7,26.4,38.1],"Est lyonnais St-Exupéry":[11.8,8.4,6.7,4.2,5.4,5.5,5.6,5.5,5.4,7.8,11.8,14.2],"Lyon Centre":[26.6,23.7,20.0,13.6,13.1,11.5,11.8,10.9,12.9,19.1,22.2,27.2],"Lyon Gerland":[22.8,18.4,17.9,12.4,12.0,11.9,12.7,11.9,11.2,13.1,16.3,21.0],"Lyon Périphérique":[46.7,40.5,42.4,34.9,36.6,35.1,41.7,38.0,34.7,36.9,38.6,47.7],"Lyon Trafic Jaurès":[37.9,27.8,26.3,20.8,19.6,17.8,18.4,17.4,20.1,26.2,28.1,34.5],"Saint Fons Sud":[23.6,18.2,16.8,11.2,11.0,9.0,10.9,10.9,12.0,15.8,18.8,23.9],"Sud Lyonnais Feyzin ZI":[23.8,18.1,15.1,13.7,11.7,10.7,12.6,13.5,13.7,13.0,16.3,22.3],"Sud Lyonnais Ternay":[19.6,17.1,17.5,15.5,9.9,10.9,11.6,9.2,8.0,13.2,14.9,20.6]},"PM10":{"A7 Sud Lyonnais":[30.8,21.7,23.9,20.4,17.9,23.4,18.8,18.7,17.1,18.6,28.2,28.8],"Est lyonnais St-Exupéry":[18.3,12.8,12.7,10.0,7.6,14.5,13.4,15.7,10.1,11.3,19.0,16.7],"Lyon Centre":[23.0,16.6,15.0,11.6,9.6,17.4,17.2,16.5,11.3,12.9,20.7,21.0],"Lyon Gerland":[24.1,15.7,13.7,10.6,8.5,14.6,12.9,13.7,11.0,13.1,22.8,22.1],"Lyon Périphérique":[28.7,21.0,21.7,18.5,15.1,22.1,21.4,19.9,15.9,19.5,27.2,26.9],"Lyon Trafic Jaurès":[18.6,13.8,14.4,10.7,8.5,13.6,11.7,13.0,9.2,10.4,18.7,17.9],"Saint Fons Sud":[32.4,17.6,18.0,14.8,11.4,15.2,15.2,15.6,12.0,13.4,21.9,21.2],"Sud Lyonnais Feyzin ZI":[25.6,17.2,18.9,14.8,12.1,18.7,18.0,18.7,14.5,13.6,22.9,21.9]},"PM25":{"A7 Sud Lyonnais":[18.6,10.6,9.7,8.9,9.3,8.9,8.3,8.2,7.6,8.6,15.4,17.3],"Est lyonnais St-Exupéry":[16.0,9.7,6.9,5.1,4.2,7.0,6.0,7.9,5.4,6.2,14.4,14.6],"Lyon Centre":[18.0,10.3,6.9,5.5,5.0,8.1,6.9,8.2,6.1,7.1,15.2,17.1],"Lyon Gerland":[19.9,10.8,7.1,5.6,5.0,8.0,6.6,7.9,6.0,7.5,17.0,18.8]},"O3":{"Est lyonnais St-Exupéry":[33.6,null,56.2,70.1,58.5,60.9,57.8,65.0,50.1,31.1,21.8,25.8],"Lyon Centre":[20.1,33.5,45.4,61.2,53.5,57.9,64.5,66.9,56.5,36.4,22.7,20.6],"Sud Lyonnais Ternay":[28.0,49.0,62.1,72.1,53.8,61.0,62.7,72.4,57.6,38.5,24.3,25.7]},"SO2":{"Saint Fons Sud":[5.7,5.3,3.3,3.3,2.9,null,2.2,2.7,3.5,3.6,4.1,5.2],"Sud Lyonnais Feyzin ZI":[7.3,4.9,2.4,7.2,4.6,6.7,6.3,6.4,3.6,2.7,3.5,7.5]}};
+const D_A24={"NO2":{"A7 Sud Lyonnais":30.5,"Est lyonnais St-Exupéry":7.7,"Lyon Centre":17.7,"Lyon Gerland":15.1,"Lyon Périphérique":39.5,"Lyon Trafic Jaurès":24.6,"Saint Fons Sud":15.2,"Sud Lyonnais Feyzin ZI":15.4,"Sud Lyonnais Ternay":14.0},"PM10":{"A7 Sud Lyonnais":22.4,"Est lyonnais St-Exupéry":13.5,"Lyon Centre":16.1,"Lyon Gerland":15.2,"Lyon Périphérique":21.5,"Lyon Trafic Jaurès":13.4,"Saint Fons Sud":17.4,"Sud Lyonnais Feyzin ZI":18.1},"PM25":{"A7 Sud Lyonnais":11.0,"Est lyonnais St-Exupéry":8.6,"Lyon Centre":9.5,"Lyon Gerland":10.0},"O3":{"Est lyonnais St-Exupéry":48.3,"Lyon Centre":44.9,"Sud Lyonnais Ternay":50.6},"SO2":{"Saint Fons Sud":3.8,"Sud Lyonnais Feyzin ZI":5.3}};
+
+const ST_TYPE={'A7 Sud Lyonnais':'trafic','Lyon Périphérique':'trafic','Lyon Trafic Jaurès':'trafic','Lyon Centre':'urbain','Lyon Gerland':'urbain','Est Lyonnais Vaulx-en-Velin':'periurbain','Est lyonnais St-Exupéry':'periurbain','Sud Lyonnais Ternay':'periurbain','Saint Fons Sud':'industriel','Sud Lyonnais Feyzin ZI':'industriel'};
+const TYPE_COLOR={'trafic':'#ff4545','urbain':'#3cc8ff','periurbain':'#3cffb8','industriel':'#c87cff'};
+
+const MOIS=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+const PC={NO2:'#e8ff3c',PM10:'#ff4545',PM25:'#ff8c3c',O3:'#3cc8ff',SO2:'#c87cff'};
+const PL={NO2:"NO₂ — Dioxyde d'azote",PM10:'PM10 — Particules ≤10µm',PM25:'PM2.5 — Particules fines',O3:'O₃ — Ozone',SO2:'SO₂ — Dioxyde de soufre'};
+const TH={NO2:{eu:40,oms:10,u:'µg/m³/an',note:'Limite UE dépassée à Lyon Périphérique (40.5 µg/m³ en 2025 vs 39.5 µg/m³ en 2024).'},PM10:{eu:40,oms:15,u:'µg/m³/an',note:'Toutes les stations respectent la limite UE. La recommandation OMS (15 µg/m³) est dépassée sur plusieurs stations.'},PM25:{eu:25,oms:5,u:'µg/m³/an',note:'Limite UE respectée partout. La recommandation OMS (5 µg/m³) est dépassée par un facteur ×2.'},O3:{eu:120,oms:60,u:'µg/m³ (8h)',note:"L'ozone est plus élevé en périphérie qu'en centre-ville — phénomène de piégeage par le NO du trafic."},SO2:{eu:125,oms:40,u:'µg/m³/24h',note:'SO₂ très inférieur aux seuils. Mesuré uniquement près de la Vallée de la Chimie.'}};
+const PAL=['#60a5fa','#34d399','#fb923c','#f472b6','#a78bfa','#38bdf8','#fbbf24','#4ade80','#f87171','#e879f9','#94a3b8','#818cf8'];
+
+let lC, bC, curPol='NO2', yearMode='2025', viewMode='all';
+const ttCfg={backgroundColor:'#111',borderColor:'#333',borderWidth:1,titleFont:{family:'DM Mono',size:11},bodyFont:{family:'DM Mono',size:11}};
+
+function getColor(s,i){return viewMode==='type'?TYPE_COLOR[ST_TYPE[s]]||PAL[i%PAL.length]:PAL[i%PAL.length];}
+function getDM(pol){return yearMode==='2024'?D_M24[pol]||{}:D_M[pol]||{};}
+function getDA(pol){return yearMode==='2024'?D_A24[pol]||{}:D_A[pol]||{};}
+
+function upd(pol){
+  curPol=pol;
+  const c=PC[pol], th=TH[pol];
+  const isCompare = yearMode==='cmp';
+
+  // — Boutons polluants
+  document.querySelectorAll('.pol-btn').forEach(b=>{
+    const on=b.dataset.pol===pol;
+    b.classList.toggle('active',on);
+    if(on){b.style.background=c;b.style.color='#000';b.style.borderColor=c;}
+    else{b.style.background='';b.style.color='';b.style.borderColor='';}
+  });
+
+  const yearLabel = isCompare ? '2024 vs 2025' : yearMode;
+  document.getElementById('line-title').textContent=`ÉVOLUTION MENSUELLE — ${PL[pol].toUpperCase()} (µg/m³)`;
+  document.getElementById('line-sub').textContent=`Concentration moyenne journalière par mois · ${yearLabel} · Stations permanentes lyonnaises`;
+  document.getElementById('bar-title').textContent=`CLASSEMENT ANNUEL ${yearLabel} — ${pol} PAR STATION (µg/m³)`;
+  document.getElementById('bar-sub').textContent=isCompare?'Barres groupées : 2024 (transparent) · 2025 (plein) · ▲▼ variation':'Moyenne annuelle de la plus concentrée à la moins concentrée';
+
+  const tn=document.getElementById('thresh-note');
+  tn.style.borderColor=c;
+  tn.innerHTML=`<strong>Limite UE :</strong> ${th.eu} ${th.u} — <strong>Recommandation OMS 2021 :</strong> ${th.oms} ${th.u}<br>${th.note}`;
+
+  // Note Vaulx
+  const vaulxPols=['NO2','PM25','O3'];
+  document.getElementById('vaulx-note').style.display=(isCompare&&vaulxPols.includes(pol))?'block':'none';
+
+  const scaleCfg={x:{grid:{color:'#1a1a1a'},ticks:{color:'#555',font:{family:'DM Mono',size:11}}},y:{grid:{color:'#1a1a1a'},ticks:{color:'#555',font:{family:'DM Mono',size:11},callback:v=>v+' µg/m³'},beginAtZero:true,grace:'15%'}};
+
+  // ── LINE CHART ──
+  const m25=D_M[pol]||{}, m24=D_M24[pol]||{};
+  const sts = isCompare ? [...new Set([...Object.keys(m25),...Object.keys(m24)])] : Object.keys(getDM(pol));
+  const lDS=[];
+
+  if(isCompare){
+    sts.forEach((s,i)=>{
+      const col=getColor(s,i);
+      if(m24[s]) lDS.push({label:`${s} 2024`,data:m24[s],borderColor:col+'55',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,pointHoverRadius:5,tension:.35,spanGaps:true});
+      if(m25[s]) lDS.push({label:`${s} 2025`,data:m25[s],borderColor:col,backgroundColor:col+'18',borderWidth:2,pointRadius:3,pointHoverRadius:6,tension:.35,spanGaps:true});
+    });
+  } else {
+    sts.forEach((s,i)=>{
+      const m=getDM(pol);
+      lDS.push({label:s,data:m[s],borderColor:getColor(s,i),backgroundColor:getColor(s,i)+'18',borderWidth:2,pointRadius:3,pointHoverRadius:6,tension:.35,spanGaps:true});
+    });
+  }
+  // Seuils
+  lDS.push({label:`UE ${th.eu}`,data:Array(12).fill(th.eu),borderColor:c+'70',borderWidth:1.5,borderDash:[6,4],pointRadius:0,fill:false,spanGaps:true});
+  lDS.push({label:`OMS ${th.oms}`,data:Array(12).fill(th.oms),borderColor:'#ff6b6bcc',borderWidth:1.5,borderDash:[3,3],pointRadius:0,fill:false,spanGaps:true});
+
+  // Annotations min/max (mode 1 année seulement)
+  const lineAnnotations={};
+  if(!isCompare){
+    const src=getDM(pol);
+    let globalMax=-Infinity,globalMin=Infinity,maxSt='',maxMo=0,minSt='',minMo=0;
+    sts.forEach(s=>{(src[s]||[]).forEach((v,i)=>{if(v!=null&&v>globalMax){globalMax=v;maxSt=s;maxMo=i;}if(v!=null&&v<globalMin){globalMin=v;minSt=s;minMo=i;}});});
+    const shorten=s=>s.replace('Sud Lyonnais ','').replace('Est lyonnais ','').replace('Est Lyonnais ','');
+    if(globalMax>-Infinity){
+      lineAnnotations.maxPt={type:'point',xValue:maxMo,yValue:globalMax,backgroundColor:c,radius:5,borderColor:'#000',borderWidth:1};
+      lineAnnotations.maxLbl={type:'label',xValue:maxMo,yValue:globalMax,content:[`▲ ${MOIS[maxMo]} · ${globalMax} µg/m³`,shorten(maxSt)],color:c,font:{family:'DM Mono',size:9},yAdjust:-36,backgroundColor:'rgba(0,0,0,.85)',padding:{x:6,y:4},borderRadius:3};
+    }
+    if(globalMin<Infinity){
+      lineAnnotations.minPt={type:'point',xValue:minMo,yValue:globalMin,backgroundColor:'#3cffb8',radius:5,borderColor:'#000',borderWidth:1};
+      lineAnnotations.minLbl={type:'label',xValue:minMo,yValue:globalMin,content:[`▼ ${MOIS[minMo]} · ${globalMin} µg/m³`,shorten(minSt)],color:'#3cffb8',font:{family:'DM Mono',size:9},yAdjust:36,backgroundColor:'rgba(0,0,0,.85)',padding:{x:6,y:4},borderRadius:3};
+    }
+  }
+
+  if(lC)lC.destroy();
+  lC=new Chart(document.getElementById('lineChart'),{type:'line',data:{labels:MOIS,datasets:lDS},options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},layout:{padding:{top:45,bottom:20,left:10,right:20}},interaction:{mode:'nearest',intersect:false},plugins:{legend:{display:false},tooltip:{...ttCfg,callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y!==null?ctx.parsed.y+' µg/m³':'N/D'}`}},annotation:{annotations:lineAnnotations}},scales:scaleCfg}});
+
+  // Légende ligne
+  const stBase=isCompare?sts:Object.keys(getDM(pol));
+  if(viewMode==='all'){
+    document.getElementById('line-legend').style.display='flex';
+    document.getElementById('type-legend').style.display='none';
+    document.getElementById('line-legend').innerHTML=stBase.map((s,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${PAL[i%PAL.length]}"></div>${s}</div>`).join('');
+  } else {
+    document.getElementById('line-legend').style.display='none';
+    document.getElementById('type-legend').style.display='flex';
+  }
+
+  // ── BAR CHART ──
+  const a25=D_A[pol]||{}, a24=D_A24[pol]||{};
+  document.getElementById('cmp-legend').style.display=isCompare?'flex':'none';
+
+  let bLabels, bDatasets;
+  if(isCompare){
+    // Stations communes aux deux années
+    const stCmp=[...new Set([...Object.keys(a25),...Object.keys(a24)])];
+    // Tri par valeur 2025 desc (fallback 2024)
+    stCmp.sort((a,b)=>(a25[b]??a24[b]??0)-(a25[a]??a24[a]??0));
+    bLabels=stCmp;
+    const bC2=stCmp.map((s,i)=>viewMode==='type'?TYPE_COLOR[ST_TYPE[s]]||PAL[i%PAL.length]:PAL[i%PAL.length]);
+    // Barres 2024 transparentes + 2025 pleines + delta en label
+    bDatasets=[
+      {label:'2024',data:stCmp.map(s=>a24[s]??null),backgroundColor:bC2.map(x=>x+'44'),borderColor:bC2.map(x=>x+'88'),borderWidth:1,borderRadius:3,borderDash:[4,2]},
+      {label:'2025',data:stCmp.map(s=>a25[s]??null),backgroundColor:bC2.map(x=>x+'cc'),borderColor:bC2,borderWidth:1,borderRadius:3}
+    ];
+  } else {
+    const a=getDA(pol);
+    const sorted=Object.entries(a).sort((x,y)=>y[1]-x[1]);
+    bLabels=sorted.map(([s])=>s);
+    const bVals=sorted.map(([,v])=>v);
+    const stAll=Object.keys(getDM(pol));
+    const bC2=bLabels.map((s,i)=>viewMode==='type'?TYPE_COLOR[ST_TYPE[s]]||PAL[i%PAL.length]:PAL[stAll.indexOf(s)%PAL.length]||c);
+    bDatasets=[{label:'stations',data:bVals,backgroundColor:bC2.map(x=>x+'cc'),borderColor:bC2,borderWidth:1,borderRadius:4}];
+  }
+
+  const annoLabels=isCompare?{}:{euLine:{type:'line',scaleID:'x',value:th.eu,borderColor:c+'99',borderWidth:2,borderDash:[6,4],label:{display:true,content:`UE: ${th.eu}`,position:'end',backgroundColor:'rgba(0,0,0,.8)',color:c,font:{family:'DM Mono',size:10},padding:{x:6,y:3},yAdjust:-14}},omsLine:{type:'line',scaleID:'x',value:th.oms,borderColor:'#ff6b6bcc',borderWidth:2,borderDash:[3,3],label:{display:true,content:`OMS: ${th.oms}`,position:'end',backgroundColor:'rgba(0,0,0,.8)',color:'#ff6b6b',font:{family:'DM Mono',size:10},padding:{x:6,y:3},yAdjust:10}}};
+
+  if(bC)bC.destroy();
+  bC=new Chart(document.getElementById('barChart'),{
+    type:'bar',
+    data:{labels:bLabels,datasets:bDatasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      indexAxis:'y',
+      animation:{duration:600,easing:'easeOutQuart'},
+      interaction:{mode:'nearest',intersect:true},
+      plugins:{
+        legend:{display:isCompare,position:'top',labels:{color:'#888',font:{family:'DM Mono',size:11},usePointStyle:true,pointStyle:'rect'}},
+        tooltip:{...ttCfg,callbacks:{
+          label:ctx=>{
+            const v=ctx.parsed.x;
+            if(v==null)return '';
+            const s=bLabels[ctx.dataIndex];
+            const yr=ctx.dataset.label==='2024'?'2024':'2025';
+            let delta='';
+            if(isCompare&&ctx.dataset.label==='2025'){
+              const v24=D_A24[pol]?.[s];
+              if(v24!=null){const d=(v-v24).toFixed(1);delta=` (${d>0?'+':''}${d} vs 2024)`;}
+            }
+            return ` ${yr}: ${v} µg/m³${delta}`;
+          }
+        }},
+        annotation:{annotations:annoLabels}
+      },
+      scales:{
+        x:{stacked:false,grid:{color:'#1a1a1a'},ticks:{color:'#555',font:{family:'DM Mono',size:11},callback:v=>v+' µg/m³'},beginAtZero:true},
+        y:{stacked:false,grid:{color:'#1a1a1a'},ticks:{color:'#888',font:{family:'DM Mono',size:11}}}
+      }
+    }
+  });
+}
+
+// Boutons polluants
+document.querySelectorAll('.pol-btn').forEach(b=>b.addEventListener('click',()=>upd(b.dataset.pol)));
+
+// Boutons années
+function setYear(y){
+  yearMode=y;
+  document.getElementById('yr-2025').classList.toggle('active',y==='2025');
+  document.getElementById('yr-2024').classList.toggle('active',y==='2024');
+  document.getElementById('yr-cmp').classList.toggle('active',y==='cmp');
+  upd(curPol);
+}
+document.getElementById('yr-2025').addEventListener('click',()=>setYear('2025'));
+document.getElementById('yr-2024').addEventListener('click',()=>setYear('2024'));
+document.getElementById('yr-cmp').addEventListener('click',()=>setYear('cmp'));
+
+// Boutons vue
+document.getElementById('view-all').addEventListener('click',()=>{viewMode='all';document.getElementById('view-all').classList.add('active');document.getElementById('view-type').classList.remove('active');upd(curPol);});
+document.getElementById('view-type').addEventListener('click',()=>{viewMode='type';document.getElementById('view-type').classList.add('active');document.getElementById('view-all').classList.remove('active');upd(curPol);});
+
+// Init
+const btn0=document.querySelector('.pol-btn[data-pol="NO2"]');
+btn0.style.background=PC.NO2;btn0.style.color='#000';btn0.style.borderColor=PC.NO2;
+upd('NO2');
+</script>
+</body>
+</html>
