@@ -13,7 +13,6 @@ jobs:
 
       - name: Récupérer l'indice ATMO Lyon
         run: |
-          # Récupère l'URL du CSV via l'API dataset (stable)
           CSV_URL=$(curl -sL "https://www.data.gouv.fr/api/1/datasets/indice-de-la-qualite-de-lair-quotidien-par-commune-indice-atmo/" \
             | python3 -c "
           import sys, json
@@ -27,21 +26,30 @@ jobs:
 
           python3 - <<'EOF'
           import csv, json
+          from datetime import date
+
+          today = date.today().isoformat()
           result = {}
+
           with open('indice_atmo.csv', encoding='utf-8') as f:
               reader = csv.DictReader(f)
-              rows = [r for r in reader if r.get('lib_zone','').strip().lower() == 'lyon']
-              if rows:
-                  # Prendre la ligne avec la date la plus récente
-                  rows.sort(key=lambda r: r.get('date_ech',''), reverse=True)
-                  row = rows[0]
-                  result = {
-                      'commune': row.get('lib_zone',''),
-                      'date': row.get('date_ech',''),
-                      'qualificatif': row.get('lib_qual',''),
-                      'indice': row.get('code_qual',''),
-                      'couleur': row.get('coul_qual','')
-                  }
+              rows = [
+                  r for r in reader
+                  if r.get('lib_zone','').strip().lower() == 'lyon'
+                  and r.get('date_ech','') <= today
+              ]
+
+          if rows:
+              rows.sort(key=lambda r: r.get('date_ech',''), reverse=True)
+              row = rows[0]
+              result = {
+                  'commune':     row.get('lib_zone',''),
+                  'date':        row.get('date_ech',''),
+                  'qualificatif': row.get('lib_qual',''),
+                  'indice':      row.get('code_qual',''),
+                  'couleur':     row.get('coul_qual','')
+              }
+
           with open('atmo.json', 'w') as f:
               json.dump(result, f, ensure_ascii=False, indent=2)
           print("Résultat:", result)
@@ -54,3 +62,4 @@ jobs:
           git add atmo.json
           git diff --cached --quiet || git commit -m "Update indice ATMO $(date +%Y-%m-%d)"
           git push
+
