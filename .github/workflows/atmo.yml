@@ -22,7 +22,7 @@ jobs:
           print(csv['latest'] if csv else '')
           ")
           echo "CSV URL: $CSV_URL"
-          curl -sL --retry 3 --retry-delay 5 "$CSV_URL" -o indice_atmo.csv
+          curl -sL --compressed --retry 3 --retry-delay 5 "$CSV_URL" -o indice_atmo.csv
 
           python3 - <<'EOF'
           import csv, json
@@ -62,3 +62,4 @@ jobs:
           git add atmo.json
           git diff --cached --quiet || git commit -m "Update indice ATMO $(date +%Y-%m-%d)"
           git push
+
